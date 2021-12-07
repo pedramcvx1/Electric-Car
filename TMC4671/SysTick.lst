@@ -1,0 +1,98 @@
+   1               		.file	"SysTick.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  15               	.Ltext0:
+  16               	.global	__vector_3
+  18               	__vector_3:
+  19               	.LFB2:
+  20               	.LM1:
+  21 0000 1F92      		push __zero_reg__
+  22 0002 0F92      		push r0
+  23 0004 0FB6      		in r0,__SREG__
+  24 0006 0F92      		push r0
+  25 0008 1124      		clr __zero_reg__
+  26 000a 8F93      		push r24
+  27 000c 9F93      		push r25
+  28               	/* prologue: Signal */
+  29               	/* frame size = 0 */
+  30               	.LM2:
+  31 000e 8091 0000 		lds r24,msCounter
+  32 0012 9091 0000 		lds r25,(msCounter)+1
+  33 0016 0196      		adiw r24,1
+  34 0018 9093 0000 		sts (msCounter)+1,r25
+  35 001c 8093 0000 		sts msCounter,r24
+  36               	/* epilogue start */
+  37               	.LM3:
+  38 0020 9F91      		pop r25
+  39 0022 8F91      		pop r24
+  40 0024 0F90      		pop r0
+  41 0026 0FBE      		out __SREG__,r0
+  42 0028 0F90      		pop r0
+  43 002a 1F90      		pop __zero_reg__
+  44 002c 1895      		reti
+  45               	.LFE2:
+  47               	.global	systick_init
+  49               	systick_init:
+  50               	.LFB3:
+  51               	.LM4:
+  52               	/* prologue: function */
+  53               	/* frame size = 0 */
+  54               	.LM5:
+  55 002e 80B7      		in r24,80-32
+  56 0030 8260      		ori r24,lo8(2)
+  57 0032 80BF      		out 80-32,r24
+  58               	.LM6:
+  59 0034 80B7      		in r24,80-32
+  60 0036 8260      		ori r24,lo8(2)
+  61 0038 80BF      		out 80-32,r24
+  62               	.LM7:
+  63 003a 85E9      		ldi r24,lo8(-107)
+  64 003c 8EBD      		out 78-32,r24
+  65               	.LM8:
+  66 003e 89B7      		in r24,89-32
+  67 0040 8064      		ori r24,lo8(64)
+  68 0042 89BF      		out 89-32,r24
+  69               	.LM9:
+  70 0044 1092 0000 		sts (msCounter)+1,__zero_reg__
+  71 0048 1092 0000 		sts msCounter,__zero_reg__
+  72               	/* epilogue start */
+  73               	.LM10:
+  74 004c 0895      		ret
+  75               	.LFE3:
+  77               	.global	systick_getTimer
+  79               	systick_getTimer:
+  80               	.LFB4:
+  81               	.LM11:
+  82               	/* prologue: function */
+  83               	/* frame size = 0 */
+  84               	.LM12:
+  85 004e 8091 0000 		lds r24,msCounter
+  86 0052 9091 0000 		lds r25,msCounter+1
+  87               	/* epilogue start */
+  88 0056 0895      		ret
+  89               	.LFE4:
+  91               	.global	msCounter
+  92               	.global	msCounter
+  93               		.section .bss
+  96               	msCounter:
+  97 0000 0000      		.skip 2,0
+ 138               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 SysTick.c
+C:\Users\ed\AppData\Local\Temp/ccmSojhK.s:2      *ABS*:0000003f __SREG__
+C:\Users\ed\AppData\Local\Temp/ccmSojhK.s:3      *ABS*:0000003e __SP_H__
+C:\Users\ed\AppData\Local\Temp/ccmSojhK.s:4      *ABS*:0000003d __SP_L__
+C:\Users\ed\AppData\Local\Temp/ccmSojhK.s:5      *ABS*:00000034 __CCP__
+C:\Users\ed\AppData\Local\Temp/ccmSojhK.s:6      *ABS*:00000000 __tmp_reg__
+C:\Users\ed\AppData\Local\Temp/ccmSojhK.s:7      *ABS*:00000001 __zero_reg__
+C:\Users\ed\AppData\Local\Temp/ccmSojhK.s:18     .text:00000000 __vector_3
+C:\Users\ed\AppData\Local\Temp/ccmSojhK.s:96     .bss:00000000 msCounter
+C:\Users\ed\AppData\Local\Temp/ccmSojhK.s:49     .text:0000002e systick_init
+C:\Users\ed\AppData\Local\Temp/ccmSojhK.s:79     .text:0000004e systick_getTimer
+
+UNDEFINED SYMBOLS
+__do_clear_bss

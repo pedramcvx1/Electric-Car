@@ -1,0 +1,1527 @@
+
+TMC4671_ATTiny.elf:     file format elf32-avr
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000872  00000000  00000000  00000074  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .bss          00000002  00800060  00800060  000008e6  2**0
+                  ALLOC
+  2 .debug_aranges 00000040  00000000  00000000  000008e6  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  3 .debug_pubnames 000000e7  00000000  00000000  00000926  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  4 .debug_info   00000466  00000000  00000000  00000a0d  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  5 .debug_abbrev 000001cf  00000000  00000000  00000e73  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  6 .debug_line   000005d0  00000000  00000000  00001042  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  7 .debug_frame  000000d0  00000000  00000000  00001614  2**2
+                  CONTENTS, READONLY, DEBUGGING
+  8 .debug_str    000001f5  00000000  00000000  000016e4  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  9 .debug_loc    0000038e  00000000  00000000  000018d9  2**0
+                  CONTENTS, READONLY, DEBUGGING
+
+Disassembly of section .text:
+
+00000000 <__vectors>:
+   0:	0e c0       	rjmp	.+28     	; 0x1e <__ctors_end>
+   2:	1d c0       	rjmp	.+58     	; 0x3e <__bad_interrupt>
+   4:	1c c0       	rjmp	.+56     	; 0x3e <__bad_interrupt>
+   6:	b1 c3       	rjmp	.+1890   	; 0x76a <__vector_3>
+   8:	1a c0       	rjmp	.+52     	; 0x3e <__bad_interrupt>
+   a:	19 c0       	rjmp	.+50     	; 0x3e <__bad_interrupt>
+   c:	18 c0       	rjmp	.+48     	; 0x3e <__bad_interrupt>
+   e:	17 c0       	rjmp	.+46     	; 0x3e <__bad_interrupt>
+  10:	16 c0       	rjmp	.+44     	; 0x3e <__bad_interrupt>
+  12:	15 c0       	rjmp	.+42     	; 0x3e <__bad_interrupt>
+  14:	14 c0       	rjmp	.+40     	; 0x3e <__bad_interrupt>
+  16:	13 c0       	rjmp	.+38     	; 0x3e <__bad_interrupt>
+  18:	12 c0       	rjmp	.+36     	; 0x3e <__bad_interrupt>
+  1a:	11 c0       	rjmp	.+34     	; 0x3e <__bad_interrupt>
+  1c:	10 c0       	rjmp	.+32     	; 0x3e <__bad_interrupt>
+
+0000001e <__ctors_end>:
+  1e:	11 24       	eor	r1, r1
+  20:	1f be       	out	0x3f, r1	; 63
+  22:	cf e5       	ldi	r28, 0x5F	; 95
+  24:	d1 e0       	ldi	r29, 0x01	; 1
+  26:	de bf       	out	0x3e, r29	; 62
+  28:	cd bf       	out	0x3d, r28	; 61
+
+0000002a <__do_clear_bss>:
+  2a:	10 e0       	ldi	r17, 0x00	; 0
+  2c:	a0 e6       	ldi	r26, 0x60	; 96
+  2e:	b0 e0       	ldi	r27, 0x00	; 0
+  30:	01 c0       	rjmp	.+2      	; 0x34 <.do_clear_bss_start>
+
+00000032 <.do_clear_bss_loop>:
+  32:	1d 92       	st	X+, r1
+
+00000034 <.do_clear_bss_start>:
+  34:	a2 36       	cpi	r26, 0x62	; 98
+  36:	b1 07       	cpc	r27, r17
+  38:	e1 f7       	brne	.-8      	; 0x32 <.do_clear_bss_loop>
+  3a:	89 d2       	rcall	.+1298   	; 0x54e <main>
+  3c:	18 c4       	rjmp	.+2096   	; 0x86e <_exit>
+
+0000003e <__bad_interrupt>:
+  3e:	e0 cf       	rjmp	.-64     	; 0x0 <__vectors>
+
+00000040 <spi_readWriteByte>:
+#define ENCODER_INIT_VOLTAGE 			(uint16_t)6000
+#define Motor_BOTTOM_Position_Offset 	(uint16_t)44830//63600
+#define Motor_TOP_Position_Offset 		(uint16_t)50400//59450
+
+unsigned char spi_readWriteByte(unsigned char data)
+{
+  40:	58 2f       	mov	r21, r24
+  42:	90 e8       	ldi	r25, 0x80	; 128
+  44:	40 e0       	ldi	r20, 0x00	; 0
+  46:	20 e0       	ldi	r18, 0x00	; 0
+  48:	30 e0       	ldi	r19, 0x00	; 0
+	// mask for bit position
+	unsigned char nMask = 0x80;
+	unsigned char reply = 0;
+	for (int k=0; k<8; k++)
+	{
+		SCK_LOW();
+  4a:	c2 98       	cbi	0x18, 2	; 24
+
+		if (data & nMask)
+  4c:	89 2f       	mov	r24, r25
+  4e:	85 23       	and	r24, r21
+  50:	11 f0       	breq	.+4      	; 0x56 <spi_readWriteByte+0x16>
+			MOSI_HIGH();
+  52:	c0 9a       	sbi	0x18, 0	; 24
+  54:	01 c0       	rjmp	.+2      	; 0x58 <spi_readWriteByte+0x18>
+		else
+			MOSI_LOW();
+  56:	c0 98       	cbi	0x18, 0	; 24
+
+		if (MISO)
+  58:	b1 99       	sbic	0x16, 1	; 22
+		{
+			reply |= nMask;
+  5a:	49 2b       	or	r20, r25
+		}
+		SCK_HIGH();
+  5c:	c2 9a       	sbi	0x18, 2	; 24
+unsigned char spi_readWriteByte(unsigned char data)
+{
+	// mask for bit position
+	unsigned char nMask = 0x80;
+	unsigned char reply = 0;
+	for (int k=0; k<8; k++)
+  5e:	2f 5f       	subi	r18, 0xFF	; 255
+  60:	3f 4f       	sbci	r19, 0xFF	; 255
+  62:	28 30       	cpi	r18, 0x08	; 8
+  64:	31 05       	cpc	r19, r1
+  66:	11 f0       	breq	.+4      	; 0x6c <spi_readWriteByte+0x2c>
+			reply |= nMask;
+		}
+		SCK_HIGH();
+
+		// update bit position
+		nMask >>= 1;
+  68:	96 95       	lsr	r25
+  6a:	ef cf       	rjmp	.-34     	; 0x4a <spi_readWriteByte+0xa>
+	}
+	return reply;
+}
+  6c:	84 2f       	mov	r24, r20
+  6e:	08 95       	ret
+
+00000070 <spi_writeInt>:
+
+void spi_writeInt(uint8_t motor, uint8_t address, int32_t value)
+{
+  70:	6f 92       	push	r6
+  72:	7f 92       	push	r7
+  74:	8f 92       	push	r8
+  76:	9f 92       	push	r9
+  78:	af 92       	push	r10
+  7a:	bf 92       	push	r11
+  7c:	cf 92       	push	r12
+  7e:	df 92       	push	r13
+  80:	0f 93       	push	r16
+  82:	df 93       	push	r29
+  84:	cf 93       	push	r28
+  86:	00 d0       	rcall	.+0      	; 0x88 <spi_writeInt+0x18>
+  88:	00 d0       	rcall	.+0      	; 0x8a <spi_writeInt+0x1a>
+  8a:	cd b7       	in	r28, 0x3d	; 61
+  8c:	de b7       	in	r29, 0x3e	; 62
+  8e:	08 2f       	mov	r16, r24
+  90:	39 01       	movw	r6, r18
+  92:	4a 01       	movw	r8, r20
+	SCK_HIGH();
+  94:	c2 9a       	sbi	0x18, 2	; 24
+
+	// select motor
+	if (motor == MOTOR_BOTTOM)
+  96:	88 23       	and	r24, r24
+  98:	11 f4       	brne	.+4      	; 0x9e <spi_writeInt+0x2e>
+		CS_MOTOR_BOTTOM_LOW();
+  9a:	c3 98       	cbi	0x18, 3	; 24
+  9c:	03 c0       	rjmp	.+6      	; 0xa4 <spi_writeInt+0x34>
+	else if (motor == MOTOR_TOP)
+  9e:	81 30       	cpi	r24, 0x01	; 1
+  a0:	09 f4       	brne	.+2      	; 0xa4 <spi_writeInt+0x34>
+		CS_MOTOR_TOP_LOW();
+  a2:	c4 98       	cbi	0x18, 4	; 24
+
+	// write address
+	spi_readWriteByte(address|0x80);
+  a4:	86 2f       	mov	r24, r22
+  a6:	80 68       	ori	r24, 0x80	; 128
+  a8:	cb df       	rcall	.-106    	; 0x40 <spi_readWriteByte>
+
+	// write value
+ 	uint8_t buf[4];
+ 	buf[0] = value & 0xFF;
+ 	value >>= 8;
+  aa:	dd 24       	eor	r13, r13
+  ac:	97 fc       	sbrc	r9, 7
+  ae:	da 94       	dec	r13
+  b0:	c9 2c       	mov	r12, r9
+  b2:	b8 2c       	mov	r11, r8
+  b4:	a7 2c       	mov	r10, r7
+ 	buf[1] = value & 0xFF;
+ 	value >>= 8;
+  b6:	c4 01       	movw	r24, r8
+  b8:	bb 27       	eor	r27, r27
+  ba:	97 fd       	sbrc	r25, 7
+  bc:	b0 95       	com	r27
+  be:	ab 2f       	mov	r26, r27
+  c0:	89 83       	std	Y+1, r24	; 0x01
+  c2:	9a 83       	std	Y+2, r25	; 0x02
+  c4:	ab 83       	std	Y+3, r26	; 0x03
+  c6:	bc 83       	std	Y+4, r27	; 0x04
+ 	buf[2] = value & 0xFF;
+ 	value >>= 8;
+ 	buf[3] = value & 0xFF;
+
+	spi_readWriteByte(buf[3]);
+  c8:	89 2d       	mov	r24, r9
+  ca:	bb 27       	eor	r27, r27
+  cc:	87 fd       	sbrc	r24, 7
+  ce:	b0 95       	com	r27
+  d0:	9b 2f       	mov	r25, r27
+  d2:	ab 2f       	mov	r26, r27
+  d4:	b5 df       	rcall	.-150    	; 0x40 <spi_readWriteByte>
+	spi_readWriteByte(buf[2]);
+  d6:	89 81       	ldd	r24, Y+1	; 0x01
+  d8:	b3 df       	rcall	.-154    	; 0x40 <spi_readWriteByte>
+	spi_readWriteByte(buf[1]);
+  da:	8a 2d       	mov	r24, r10
+  dc:	b1 df       	rcall	.-158    	; 0x40 <spi_readWriteByte>
+	spi_readWriteByte(buf[0]);
+  de:	86 2d       	mov	r24, r6
+  e0:	af df       	rcall	.-162    	; 0x40 <spi_readWriteByte>
+
+	// deselect motor
+	if (motor == MOTOR_BOTTOM)
+  e2:	00 23       	and	r16, r16
+  e4:	11 f4       	brne	.+4      	; 0xea <spi_writeInt+0x7a>
+		CS_MOTOR_BOTTOM_HIGH();
+  e6:	c3 9a       	sbi	0x18, 3	; 24
+  e8:	03 c0       	rjmp	.+6      	; 0xf0 <spi_writeInt+0x80>
+	else if (motor == MOTOR_TOP)
+  ea:	01 30       	cpi	r16, 0x01	; 1
+  ec:	09 f4       	brne	.+2      	; 0xf0 <spi_writeInt+0x80>
+		CS_MOTOR_TOP_HIGH();
+  ee:	c4 9a       	sbi	0x18, 4	; 24
+}
+  f0:	0f 90       	pop	r0
+  f2:	0f 90       	pop	r0
+  f4:	0f 90       	pop	r0
+  f6:	0f 90       	pop	r0
+  f8:	cf 91       	pop	r28
+  fa:	df 91       	pop	r29
+  fc:	0f 91       	pop	r16
+  fe:	df 90       	pop	r13
+ 100:	cf 90       	pop	r12
+ 102:	bf 90       	pop	r11
+ 104:	af 90       	pop	r10
+ 106:	9f 90       	pop	r9
+ 108:	8f 90       	pop	r8
+ 10a:	7f 90       	pop	r7
+ 10c:	6f 90       	pop	r6
+ 10e:	08 95       	ret
+
+00000110 <spi_readInt>:
+
+uint32_t spi_readInt(uint8_t motor, uint8_t address)
+{
+ 110:	ef 92       	push	r14
+ 112:	ff 92       	push	r15
+ 114:	0f 93       	push	r16
+ 116:	1f 93       	push	r17
+ 118:	18 2f       	mov	r17, r24
+	SCK_HIGH();
+ 11a:	c2 9a       	sbi	0x18, 2	; 24
+
+	// select motor
+	if (motor == MOTOR_BOTTOM)
+ 11c:	88 23       	and	r24, r24
+ 11e:	11 f4       	brne	.+4      	; 0x124 <spi_readInt+0x14>
+		CS_MOTOR_BOTTOM_LOW();
+ 120:	c3 98       	cbi	0x18, 3	; 24
+ 122:	03 c0       	rjmp	.+6      	; 0x12a <spi_readInt+0x1a>
+	else if (motor == MOTOR_TOP)
+ 124:	81 30       	cpi	r24, 0x01	; 1
+ 126:	09 f4       	brne	.+2      	; 0x12a <spi_readInt+0x1a>
+		CS_MOTOR_TOP_LOW();
+ 128:	c4 98       	cbi	0x18, 4	; 24
+
+	// select address with cleared write bit
+	spi_readWriteByte(address & 0x7F);
+ 12a:	86 2f       	mov	r24, r22
+ 12c:	8f 77       	andi	r24, 0x7F	; 127
+ 12e:	88 df       	rcall	.-240    	; 0x40 <spi_readWriteByte>
+
+	uint32_t value = 0;
+ 	value = spi_readWriteByte(0);
+ 130:	80 e0       	ldi	r24, 0x00	; 0
+ 132:	86 df       	rcall	.-244    	; 0x40 <spi_readWriteByte>
+ 134:	e8 2e       	mov	r14, r24
+ 	value = value << 8;
+ 	value |= spi_readWriteByte(0);
+ 136:	80 e0       	ldi	r24, 0x00	; 0
+ 138:	83 df       	rcall	.-250    	; 0x40 <spi_readWriteByte>
+ 13a:	f8 2e       	mov	r15, r24
+ 	value = value << 8;
+ 	value |= spi_readWriteByte(0);
+ 13c:	80 e0       	ldi	r24, 0x00	; 0
+ 13e:	80 df       	rcall	.-256    	; 0x40 <spi_readWriteByte>
+ 140:	08 2f       	mov	r16, r24
+ 	value = value << 8;
+ 	value |= spi_readWriteByte(0);
+ 142:	80 e0       	ldi	r24, 0x00	; 0
+ 144:	7d df       	rcall	.-262    	; 0x40 <spi_readWriteByte>
+ 146:	68 2f       	mov	r22, r24
+
+	// deselect motor
+	if (motor == MOTOR_BOTTOM)
+ 148:	11 23       	and	r17, r17
+ 14a:	11 f4       	brne	.+4      	; 0x150 <spi_readInt+0x40>
+		CS_MOTOR_BOTTOM_HIGH();
+ 14c:	c3 9a       	sbi	0x18, 3	; 24
+ 14e:	03 c0       	rjmp	.+6      	; 0x156 <spi_readInt+0x46>
+	else if (motor == MOTOR_TOP)
+ 150:	11 30       	cpi	r17, 0x01	; 1
+ 152:	09 f4       	brne	.+2      	; 0x156 <spi_readInt+0x46>
+		CS_MOTOR_TOP_HIGH();
+ 154:	c4 9a       	sbi	0x18, 4	; 24
+
+	// select address with cleared write bit
+	spi_readWriteByte(address & 0x7F);
+
+	uint32_t value = 0;
+ 	value = spi_readWriteByte(0);
+ 156:	2e 2d       	mov	r18, r14
+ 158:	30 e0       	ldi	r19, 0x00	; 0
+ 15a:	40 e0       	ldi	r20, 0x00	; 0
+ 15c:	50 e0       	ldi	r21, 0x00	; 0
+ 	value = value << 8;
+ 15e:	54 2f       	mov	r21, r20
+ 160:	43 2f       	mov	r20, r19
+ 162:	32 2f       	mov	r19, r18
+ 164:	22 27       	eor	r18, r18
+ 	value |= spi_readWriteByte(0);
+ 166:	8f 2d       	mov	r24, r15
+ 168:	90 e0       	ldi	r25, 0x00	; 0
+ 16a:	a0 e0       	ldi	r26, 0x00	; 0
+ 16c:	b0 e0       	ldi	r27, 0x00	; 0
+ 16e:	28 2b       	or	r18, r24
+ 170:	39 2b       	or	r19, r25
+ 172:	4a 2b       	or	r20, r26
+ 174:	5b 2b       	or	r21, r27
+ 	value = value << 8;
+ 176:	54 2f       	mov	r21, r20
+ 178:	43 2f       	mov	r20, r19
+ 17a:	32 2f       	mov	r19, r18
+ 17c:	22 27       	eor	r18, r18
+ 	value |= spi_readWriteByte(0);
+ 17e:	80 2f       	mov	r24, r16
+ 180:	90 e0       	ldi	r25, 0x00	; 0
+ 182:	a0 e0       	ldi	r26, 0x00	; 0
+ 184:	b0 e0       	ldi	r27, 0x00	; 0
+ 186:	28 2b       	or	r18, r24
+ 188:	39 2b       	or	r19, r25
+ 18a:	4a 2b       	or	r20, r26
+ 18c:	5b 2b       	or	r21, r27
+ 	value = value << 8;
+ 18e:	54 2f       	mov	r21, r20
+ 190:	43 2f       	mov	r20, r19
+ 192:	32 2f       	mov	r19, r18
+ 194:	22 27       	eor	r18, r18
+ 196:	86 2f       	mov	r24, r22
+ 198:	90 e0       	ldi	r25, 0x00	; 0
+ 19a:	a0 e0       	ldi	r26, 0x00	; 0
+ 19c:	b0 e0       	ldi	r27, 0x00	; 0
+ 19e:	28 2b       	or	r18, r24
+ 1a0:	39 2b       	or	r19, r25
+ 1a2:	4a 2b       	or	r20, r26
+ 1a4:	5b 2b       	or	r21, r27
+		CS_MOTOR_BOTTOM_HIGH();
+	else if (motor == MOTOR_TOP)
+		CS_MOTOR_TOP_HIGH();
+
+	return value;
+}
+ 1a6:	b9 01       	movw	r22, r18
+ 1a8:	ca 01       	movw	r24, r20
+ 1aa:	1f 91       	pop	r17
+ 1ac:	0f 91       	pop	r16
+ 1ae:	ff 90       	pop	r15
+ 1b0:	ef 90       	pop	r14
+ 1b2:	08 95       	ret
+
+000001b4 <configureMotor>:
+	uint32_t startTime = systick_getTimer();
+	while ((systick_getTimer()-startTime) < time){;}
+}
+
+void configureMotor(uint8_t motor)
+{
+ 1b4:	1f 93       	push	r17
+ 1b6:	18 2f       	mov	r17, r24
+	// Type of motor &  PWM configuration
+	spi_writeInt(motor, TMC4671_MOTOR_TYPE_N_POLE_PAIRS, 0x00020032);
+ 1b8:	6b e1       	ldi	r22, 0x1B	; 27
+ 1ba:	22 e3       	ldi	r18, 0x32	; 50
+ 1bc:	30 e0       	ldi	r19, 0x00	; 0
+ 1be:	42 e0       	ldi	r20, 0x02	; 2
+ 1c0:	50 e0       	ldi	r21, 0x00	; 0
+ 1c2:	56 df       	rcall	.-340    	; 0x70 <spi_writeInt>
+	spi_writeInt(motor, TMC4671_PWM_POLARITIES, 0x00000000);
+ 1c4:	81 2f       	mov	r24, r17
+ 1c6:	67 e1       	ldi	r22, 0x17	; 23
+ 1c8:	20 e0       	ldi	r18, 0x00	; 0
+ 1ca:	30 e0       	ldi	r19, 0x00	; 0
+ 1cc:	40 e0       	ldi	r20, 0x00	; 0
+ 1ce:	50 e0       	ldi	r21, 0x00	; 0
+ 1d0:	4f df       	rcall	.-354    	; 0x70 <spi_writeInt>
+	spi_writeInt(motor, TMC4671_PWM_SV_CHOP, 0x00000007);
+ 1d2:	81 2f       	mov	r24, r17
+ 1d4:	6a e1       	ldi	r22, 0x1A	; 26
+ 1d6:	27 e0       	ldi	r18, 0x07	; 7
+ 1d8:	30 e0       	ldi	r19, 0x00	; 0
+ 1da:	40 e0       	ldi	r20, 0x00	; 0
+ 1dc:	50 e0       	ldi	r21, 0x00	; 0
+ 1de:	48 df       	rcall	.-368    	; 0x70 <spi_writeInt>
+	spi_writeInt(motor, TMC4671_PWM_MAXCNT, 0x00000F9F);
+ 1e0:	81 2f       	mov	r24, r17
+ 1e2:	68 e1       	ldi	r22, 0x18	; 24
+ 1e4:	2f e9       	ldi	r18, 0x9F	; 159
+ 1e6:	3f e0       	ldi	r19, 0x0F	; 15
+ 1e8:	40 e0       	ldi	r20, 0x00	; 0
+ 1ea:	50 e0       	ldi	r21, 0x00	; 0
+ 1ec:	41 df       	rcall	.-382    	; 0x70 <spi_writeInt>
+	spi_writeInt(motor, TMC4671_PWM_BBM_H_BBM_L, 0x00000808);
+ 1ee:	81 2f       	mov	r24, r17
+ 1f0:	69 e1       	ldi	r22, 0x19	; 25
+ 1f2:	28 e0       	ldi	r18, 0x08	; 8
+ 1f4:	38 e0       	ldi	r19, 0x08	; 8
+ 1f6:	40 e0       	ldi	r20, 0x00	; 0
+ 1f8:	50 e0       	ldi	r21, 0x00	; 0
+ 1fa:	3a df       	rcall	.-396    	; 0x70 <spi_writeInt>
+
+	// ADC configuration
+	spi_writeInt(motor, TMC4671_dsADC_MCFG_B_MCFG_A, 0x00100010);
+ 1fc:	81 2f       	mov	r24, r17
+ 1fe:	64 e0       	ldi	r22, 0x04	; 4
+ 200:	20 e1       	ldi	r18, 0x10	; 16
+ 202:	30 e0       	ldi	r19, 0x00	; 0
+ 204:	40 e1       	ldi	r20, 0x10	; 16
+ 206:	50 e0       	ldi	r21, 0x00	; 0
+ 208:	33 df       	rcall	.-410    	; 0x70 <spi_writeInt>
+	spi_writeInt(motor, TMC4671_dsADC_MCLK_A, 0x20000000);
+ 20a:	81 2f       	mov	r24, r17
+ 20c:	65 e0       	ldi	r22, 0x05	; 5
+ 20e:	20 e0       	ldi	r18, 0x00	; 0
+ 210:	30 e0       	ldi	r19, 0x00	; 0
+ 212:	40 e0       	ldi	r20, 0x00	; 0
+ 214:	50 e2       	ldi	r21, 0x20	; 32
+ 216:	2c df       	rcall	.-424    	; 0x70 <spi_writeInt>
+	spi_writeInt(motor, TMC4671_dsADC_MCLK_B, 0x00000000);
+ 218:	81 2f       	mov	r24, r17
+ 21a:	66 e0       	ldi	r22, 0x06	; 6
+ 21c:	20 e0       	ldi	r18, 0x00	; 0
+ 21e:	30 e0       	ldi	r19, 0x00	; 0
+ 220:	40 e0       	ldi	r20, 0x00	; 0
+ 222:	50 e0       	ldi	r21, 0x00	; 0
+ 224:	25 df       	rcall	.-438    	; 0x70 <spi_writeInt>
+	spi_writeInt(motor, TMC4671_dsADC_MDEC_B_MDEC_A, 0x00430040); // Decimation configuration register.
+ 226:	81 2f       	mov	r24, r17
+ 228:	67 e0       	ldi	r22, 0x07	; 7
+ 22a:	20 e4       	ldi	r18, 0x40	; 64
+ 22c:	30 e0       	ldi	r19, 0x00	; 0
+ 22e:	43 e4       	ldi	r20, 0x43	; 67
+ 230:	50 e0       	ldi	r21, 0x00	; 0
+ 232:	1e df       	rcall	.-452    	; 0x70 <spi_writeInt>
+
+	//ADC scale & offset
+	spi_writeInt(motor, TMC4671_ADC_I0_SCALE_OFFSET, 0x010082AC);
+ 234:	81 2f       	mov	r24, r17
+ 236:	69 e0       	ldi	r22, 0x09	; 9
+ 238:	2c ea       	ldi	r18, 0xAC	; 172
+ 23a:	32 e8       	ldi	r19, 0x82	; 130
+ 23c:	40 e0       	ldi	r20, 0x00	; 0
+ 23e:	51 e0       	ldi	r21, 0x01	; 1
+ 240:	17 df       	rcall	.-466    	; 0x70 <spi_writeInt>
+	spi_writeInt(motor, TMC4671_ADC_I1_SCALE_OFFSET, 0x01008286);
+ 242:	81 2f       	mov	r24, r17
+ 244:	68 e0       	ldi	r22, 0x08	; 8
+ 246:	26 e8       	ldi	r18, 0x86	; 134
+ 248:	32 e8       	ldi	r19, 0x82	; 130
+ 24a:	40 e0       	ldi	r20, 0x00	; 0
+ 24c:	51 e0       	ldi	r21, 0x01	; 1
+ 24e:	10 df       	rcall	.-480    	; 0x70 <spi_writeInt>
+	spi_writeInt(motor, TMC4671_ADC_I_SELECT, 0x18000100);
+ 250:	81 2f       	mov	r24, r17
+ 252:	6a e0       	ldi	r22, 0x0A	; 10
+ 254:	20 e0       	ldi	r18, 0x00	; 0
+ 256:	31 e0       	ldi	r19, 0x01	; 1
+ 258:	40 e0       	ldi	r20, 0x00	; 0
+ 25a:	58 e1       	ldi	r21, 0x18	; 24
+ 25c:	09 df       	rcall	.-494    	; 0x70 <spi_writeInt>
+
+	//Encoder configuration
+	spi_writeInt(motor, TMC4671_ABN_DECODER_MODE, 0x00000000); // Control bits how to handle ABN decoder signals.
+ 25e:	81 2f       	mov	r24, r17
+ 260:	65 e2       	ldi	r22, 0x25	; 37
+ 262:	20 e0       	ldi	r18, 0x00	; 0
+ 264:	30 e0       	ldi	r19, 0x00	; 0
+ 266:	40 e0       	ldi	r20, 0x00	; 0
+ 268:	50 e0       	ldi	r21, 0x00	; 0
+ 26a:	02 df       	rcall	.-508    	; 0x70 <spi_writeInt>
+	spi_writeInt(motor, TMC4671_ABN_DECODER_PPR, 0x00008000);
+ 26c:	81 2f       	mov	r24, r17
+ 26e:	66 e2       	ldi	r22, 0x26	; 38
+ 270:	20 e0       	ldi	r18, 0x00	; 0
+ 272:	30 e8       	ldi	r19, 0x80	; 128
+ 274:	40 e0       	ldi	r20, 0x00	; 0
+ 276:	50 e0       	ldi	r21, 0x00	; 0
+ 278:	fb de       	rcall	.-522    	; 0x70 <spi_writeInt>
+	spi_writeInt(motor, TMC4671_ABN_DECODER_COUNT_N, 0x00000000);
+ 27a:	81 2f       	mov	r24, r17
+ 27c:	68 e2       	ldi	r22, 0x28	; 40
+ 27e:	20 e0       	ldi	r18, 0x00	; 0
+ 280:	30 e0       	ldi	r19, 0x00	; 0
+ 282:	40 e0       	ldi	r20, 0x00	; 0
+ 284:	50 e0       	ldi	r21, 0x00	; 0
+ 286:	f4 de       	rcall	.-536    	; 0x70 <spi_writeInt>
+	spi_writeInt(motor, TMC4671_ABN_DECODER_PHI_E_PHI_M_OFFSET, 0x00000000);
+ 288:	81 2f       	mov	r24, r17
+ 28a:	69 e2       	ldi	r22, 0x29	; 41
+ 28c:	20 e0       	ldi	r18, 0x00	; 0
+ 28e:	30 e0       	ldi	r19, 0x00	; 0
+ 290:	40 e0       	ldi	r20, 0x00	; 0
+ 292:	50 e0       	ldi	r21, 0x00	; 0
+ 294:	ed de       	rcall	.-550    	; 0x70 <spi_writeInt>
+
+	// selections
+	spi_writeInt(motor, TMC4671_VELOCITY_SELECTION, 9);  // phi_m_abn
+ 296:	81 2f       	mov	r24, r17
+ 298:	60 e5       	ldi	r22, 0x50	; 80
+ 29a:	29 e0       	ldi	r18, 0x09	; 9
+ 29c:	30 e0       	ldi	r19, 0x00	; 0
+ 29e:	40 e0       	ldi	r20, 0x00	; 0
+ 2a0:	50 e0       	ldi	r21, 0x00	; 0
+ 2a2:	e6 de       	rcall	.-564    	; 0x70 <spi_writeInt>
+	spi_writeInt(motor, TMC4671_POSITION_SELECTION, 9);  // phi_m_abn
+ 2a4:	81 2f       	mov	r24, r17
+ 2a6:	61 e5       	ldi	r22, 0x51	; 81
+ 2a8:	29 e0       	ldi	r18, 0x09	; 9
+ 2aa:	30 e0       	ldi	r19, 0x00	; 0
+ 2ac:	40 e0       	ldi	r20, 0x00	; 0
+ 2ae:	50 e0       	ldi	r21, 0x00	; 0
+ 2b0:	df de       	rcall	.-578    	; 0x70 <spi_writeInt>
+
+	// set limits
+	spi_writeInt(motor, TMC4671_PIDOUT_UQ_UD_LIMITS, LIMIT_UQ_UD);  // 23767
+ 2b2:	81 2f       	mov	r24, r17
+ 2b4:	6d e5       	ldi	r22, 0x5D	; 93
+ 2b6:	2f ef       	ldi	r18, 0xFF	; 255
+ 2b8:	3f e7       	ldi	r19, 0x7F	; 127
+ 2ba:	40 e0       	ldi	r20, 0x00	; 0
+ 2bc:	50 e0       	ldi	r21, 0x00	; 0
+ 2be:	d8 de       	rcall	.-592    	; 0x70 <spi_writeInt>
+	spi_writeInt(motor, TMC4671_PID_TORQUE_FLUX_LIMITS, LIMIT_FLUX_TORQUE);
+ 2c0:	81 2f       	mov	r24, r17
+ 2c2:	6e e5       	ldi	r22, 0x5E	; 94
+ 2c4:	28 eb       	ldi	r18, 0xB8	; 184
+ 2c6:	3b e0       	ldi	r19, 0x0B	; 11
+ 2c8:	40 e0       	ldi	r20, 0x00	; 0
+ 2ca:	50 e0       	ldi	r21, 0x00	; 0
+ 2cc:	d1 de       	rcall	.-606    	; 0x70 <spi_writeInt>
+	spi_writeInt(motor, TMC4671_PID_VELOCITY_LIMIT, LIMIT_VELOCITY);
+ 2ce:	81 2f       	mov	r24, r17
+ 2d0:	60 e6       	ldi	r22, 0x60	; 96
+ 2d2:	24 e6       	ldi	r18, 0x64	; 100
+ 2d4:	30 e0       	ldi	r19, 0x00	; 0
+ 2d6:	40 e0       	ldi	r20, 0x00	; 0
+ 2d8:	50 e0       	ldi	r21, 0x00	; 0
+ 2da:	ca de       	rcall	.-620    	; 0x70 <spi_writeInt>
+
+	// set PI parameter
+	spi_writeInt(motor, TMC4671_PID_FLUX_P_FLUX_I, TORQUE_PI); 				// P and I parameter for the flux regulator.
+ 2dc:	81 2f       	mov	r24, r17
+ 2de:	64 e5       	ldi	r22, 0x54	; 84
+ 2e0:	20 e4       	ldi	r18, 0x40	; 64
+ 2e2:	3f e1       	ldi	r19, 0x1F	; 31
+ 2e4:	48 e8       	ldi	r20, 0x88	; 136
+ 2e6:	53 e1       	ldi	r21, 0x13	; 19
+ 2e8:	c3 de       	rcall	.-634    	; 0x70 <spi_writeInt>
+	spi_writeInt(motor, TMC4671_PID_TORQUE_P_TORQUE_I, TORQUE_PI); 			// P and I parameter for the torque regulator.
+ 2ea:	81 2f       	mov	r24, r17
+ 2ec:	66 e5       	ldi	r22, 0x56	; 86
+ 2ee:	20 e4       	ldi	r18, 0x40	; 64
+ 2f0:	3f e1       	ldi	r19, 0x1F	; 31
+ 2f2:	48 e8       	ldi	r20, 0x88	; 136
+ 2f4:	53 e1       	ldi	r21, 0x13	; 19
+ 2f6:	bc de       	rcall	.-648    	; 0x70 <spi_writeInt>
+	spi_writeInt(motor, TMC4671_PID_VELOCITY_P_VELOCITY_I, VELOCITY_PI); 	// P and I parameter for the velocity regulator.
+ 2f8:	81 2f       	mov	r24, r17
+ 2fa:	68 e5       	ldi	r22, 0x58	; 88
+ 2fc:	28 ee       	ldi	r18, 0xE8	; 232
+ 2fe:	35 e0       	ldi	r19, 0x05	; 5
+ 300:	40 e1       	ldi	r20, 0x10	; 16
+ 302:	55 e2       	ldi	r21, 0x25	; 37
+ 304:	b5 de       	rcall	.-662    	; 0x70 <spi_writeInt>
+	spi_writeInt(motor, TMC4671_PID_POSITION_P_POSITION_I, POSITION_PI); 	// P parameter for the position regulator.
+ 306:	81 2f       	mov	r24, r17
+ 308:	6a e5       	ldi	r22, 0x5A	; 90
+ 30a:	20 e0       	ldi	r18, 0x00	; 0
+ 30c:	30 e0       	ldi	r19, 0x00	; 0
+ 30e:	40 e4       	ldi	r20, 0x40	; 64
+ 310:	51 e0       	ldi	r21, 0x01	; 1
+ 312:	ae de       	rcall	.-676    	; 0x70 <spi_writeInt>
+}
+ 314:	1f 91       	pop	r17
+ 316:	08 95       	ret
+
+00000318 <encoderInit>:
+
+void encoderInit(uint8_t motor)
+{
+ 318:	df 92       	push	r13
+ 31a:	ef 92       	push	r14
+ 31c:	ff 92       	push	r15
+ 31e:	0f 93       	push	r16
+ 320:	1f 93       	push	r17
+ 322:	d8 2e       	mov	r13, r24
+	// do Encoder initialization (Mode 0)
+	spi_writeInt(motor, TMC4671_MODE_RAMP_MODE_MOTION, 0x00000008);	 	// use UQ_UD_EXT for motion
+ 324:	63 e6       	ldi	r22, 0x63	; 99
+ 326:	28 e0       	ldi	r18, 0x08	; 8
+ 328:	30 e0       	ldi	r19, 0x00	; 0
+ 32a:	40 e0       	ldi	r20, 0x00	; 0
+ 32c:	50 e0       	ldi	r21, 0x00	; 0
+ 32e:	a0 de       	rcall	.-704    	; 0x70 <spi_writeInt>
+	spi_writeInt(motor, TMC4671_ABN_DECODER_PHI_E_PHI_M_OFFSET, 0);	 	// set ABN_DECODER_PHI_E_OFFSET to zero
+ 330:	8d 2d       	mov	r24, r13
+ 332:	69 e2       	ldi	r22, 0x29	; 41
+ 334:	20 e0       	ldi	r18, 0x00	; 0
+ 336:	30 e0       	ldi	r19, 0x00	; 0
+ 338:	40 e0       	ldi	r20, 0x00	; 0
+ 33a:	50 e0       	ldi	r21, 0x00	; 0
+ 33c:	99 de       	rcall	.-718    	; 0x70 <spi_writeInt>
+	spi_writeInt(motor, TMC4671_PHI_E_SELECTION, 1);					// select phi_e_ext
+ 33e:	8d 2d       	mov	r24, r13
+ 340:	62 e5       	ldi	r22, 0x52	; 82
+ 342:	21 e0       	ldi	r18, 0x01	; 1
+ 344:	30 e0       	ldi	r19, 0x00	; 0
+ 346:	40 e0       	ldi	r20, 0x00	; 0
+ 348:	50 e0       	ldi	r21, 0x00	; 0
+ 34a:	92 de       	rcall	.-732    	; 0x70 <spi_writeInt>
+	spi_writeInt(motor, TMC4671_PHI_E_EXT, 0);							// set the "zero" angle
+ 34c:	8d 2d       	mov	r24, r13
+ 34e:	6c e1       	ldi	r22, 0x1C	; 28
+ 350:	20 e0       	ldi	r18, 0x00	; 0
+ 352:	30 e0       	ldi	r19, 0x00	; 0
+ 354:	40 e0       	ldi	r20, 0x00	; 0
+ 356:	50 e0       	ldi	r21, 0x00	; 0
+ 358:	8b de       	rcall	.-746    	; 0x70 <spi_writeInt>
+	spi_writeInt(motor, TMC4671_UQ_UD_EXT, ENCODER_INIT_VOLTAGE);		// set an initialization voltage on UD_EXT (to the flux, not the torque!)
+ 35a:	8d 2d       	mov	r24, r13
+ 35c:	64 e2       	ldi	r22, 0x24	; 36
+ 35e:	20 e7       	ldi	r18, 0x70	; 112
+ 360:	37 e1       	ldi	r19, 0x17	; 23
+ 362:	40 e0       	ldi	r20, 0x00	; 0
+ 364:	50 e0       	ldi	r21, 0x00	; 0
+ 366:	84 de       	rcall	.-760    	; 0x70 <spi_writeInt>
+	spi_writeInt(motor, TMC4671_PID_POSITION_ACTUAL, 0);				// critical: needed to set ABN_DECODER_COUNT to zero
+ 368:	8d 2d       	mov	r24, r13
+ 36a:	6b e6       	ldi	r22, 0x6B	; 107
+ 36c:	20 e0       	ldi	r18, 0x00	; 0
+ 36e:	30 e0       	ldi	r19, 0x00	; 0
+ 370:	40 e0       	ldi	r20, 0x00	; 0
+ 372:	50 e0       	ldi	r21, 0x00	; 0
+ 374:	7d de       	rcall	.-774    	; 0x70 <spi_writeInt>
+
+	// clear DECODER_COUNT and check
+	do
+	{
+		// set internal encoder value to zero
+		spi_writeInt(motor, TMC4671_ABN_DECODER_COUNT, 0);
+ 376:	8d 2d       	mov	r24, r13
+ 378:	67 e2       	ldi	r22, 0x27	; 39
+ 37a:	20 e0       	ldi	r18, 0x00	; 0
+ 37c:	30 e0       	ldi	r19, 0x00	; 0
+ 37e:	40 e0       	ldi	r20, 0x00	; 0
+ 380:	50 e0       	ldi	r21, 0x00	; 0
+ 382:	76 de       	rcall	.-788    	; 0x70 <spi_writeInt>
+		reply = spi_readInt(motor, TMC4671_ABN_DECODER_COUNT);
+ 384:	8d 2d       	mov	r24, r13
+ 386:	67 e2       	ldi	r22, 0x27	; 39
+ 388:	c3 de       	rcall	.-634    	; 0x110 <spi_readInt>
+	} while (reply != 0);
+ 38a:	61 15       	cp	r22, r1
+ 38c:	71 05       	cpc	r23, r1
+ 38e:	81 05       	cpc	r24, r1
+ 390:	91 05       	cpc	r25, r1
+ 392:	89 f7       	brne	.-30     	; 0x376 <encoderInit+0x5e>
+
+	// use encoder
+	spi_writeInt(motor, TMC4671_PHI_E_SELECTION, 0x00000003); 			// select phi_abn for rotor position angle phi_e
+ 394:	8d 2d       	mov	r24, r13
+ 396:	62 e5       	ldi	r22, 0x52	; 82
+ 398:	23 e0       	ldi	r18, 0x03	; 3
+ 39a:	30 e0       	ldi	r19, 0x00	; 0
+ 39c:	40 e0       	ldi	r20, 0x00	; 0
+ 39e:	50 e0       	ldi	r21, 0x00	; 0
+ 3a0:	67 de       	rcall	.-818    	; 0x70 <spi_writeInt>
+
+	// switch to velocity mode
+	spi_writeInt(motor, TMC4671_MODE_RAMP_MODE_MOTION, 0x00000002);
+ 3a2:	8d 2d       	mov	r24, r13
+ 3a4:	63 e6       	ldi	r22, 0x63	; 99
+ 3a6:	22 e0       	ldi	r18, 0x02	; 2
+ 3a8:	30 e0       	ldi	r19, 0x00	; 0
+ 3aa:	40 e0       	ldi	r20, 0x00	; 0
+ 3ac:	50 e0       	ldi	r21, 0x00	; 0
+ 3ae:	60 de       	rcall	.-832    	; 0x70 <spi_writeInt>
+	spi_writeInt(motor, TMC4671_PID_VELOCITY_TARGET, 10);
+ 3b0:	8d 2d       	mov	r24, r13
+ 3b2:	66 e6       	ldi	r22, 0x66	; 102
+ 3b4:	2a e0       	ldi	r18, 0x0A	; 10
+ 3b6:	30 e0       	ldi	r19, 0x00	; 0
+ 3b8:	40 e0       	ldi	r20, 0x00	; 0
+ 3ba:	50 e0       	ldi	r21, 0x00	; 0
+ 3bc:	59 de       	rcall	.-846    	; 0x70 <spi_writeInt>
+
+	// and search the N-Channel to clear the actual position
+	spi_writeInt(motor, TMC4671_ABN_DECODER_PHI_E_PHI_M, 0);
+ 3be:	8d 2d       	mov	r24, r13
+ 3c0:	6a e2       	ldi	r22, 0x2A	; 42
+ 3c2:	20 e0       	ldi	r18, 0x00	; 0
+ 3c4:	30 e0       	ldi	r19, 0x00	; 0
+ 3c6:	40 e0       	ldi	r20, 0x00	; 0
+ 3c8:	50 e0       	ldi	r21, 0x00	; 0
+ 3ca:	52 de       	rcall	.-860    	; 0x70 <spi_writeInt>
+	spi_writeInt(motor, TMC4671_ABN_DECODER_MODE, 0);
+ 3cc:	8d 2d       	mov	r24, r13
+ 3ce:	65 e2       	ldi	r22, 0x25	; 37
+ 3d0:	20 e0       	ldi	r18, 0x00	; 0
+ 3d2:	30 e0       	ldi	r19, 0x00	; 0
+ 3d4:	40 e0       	ldi	r20, 0x00	; 0
+ 3d6:	50 e0       	ldi	r21, 0x00	; 0
+ 3d8:	4b de       	rcall	.-874    	; 0x70 <spi_writeInt>
+
+	spi_writeInt(motor, TMC4671_PID_VELOCITY_TARGET, 20); // test
+ 3da:	8d 2d       	mov	r24, r13
+ 3dc:	66 e6       	ldi	r22, 0x66	; 102
+ 3de:	24 e1       	ldi	r18, 0x14	; 20
+ 3e0:	30 e0       	ldi	r19, 0x00	; 0
+ 3e2:	40 e0       	ldi	r20, 0x00	; 0
+ 3e4:	50 e0       	ldi	r21, 0x00	; 0
+ 3e6:	44 de       	rcall	.-888    	; 0x70 <spi_writeInt>
+
+	// clear DECODER_COUNT_N and check
+	do
+	{
+		spi_writeInt(motor, TMC4671_ABN_DECODER_COUNT_N, 0);
+ 3e8:	8d 2d       	mov	r24, r13
+ 3ea:	68 e2       	ldi	r22, 0x28	; 40
+ 3ec:	20 e0       	ldi	r18, 0x00	; 0
+ 3ee:	30 e0       	ldi	r19, 0x00	; 0
+ 3f0:	40 e0       	ldi	r20, 0x00	; 0
+ 3f2:	50 e0       	ldi	r21, 0x00	; 0
+ 3f4:	3d de       	rcall	.-902    	; 0x70 <spi_writeInt>
+		reply = spi_readInt(motor, TMC4671_ABN_DECODER_COUNT_N);
+ 3f6:	8d 2d       	mov	r24, r13
+ 3f8:	68 e2       	ldi	r22, 0x28	; 40
+ 3fa:	8a de       	rcall	.-748    	; 0x110 <spi_readInt>
+	} while (reply != 0);
+ 3fc:	61 15       	cp	r22, r1
+ 3fe:	71 05       	cpc	r23, r1
+ 400:	81 05       	cpc	r24, r1
+ 402:	91 05       	cpc	r25, r1
+ 404:	89 f7       	brne	.-30     	; 0x3e8 <encoderInit+0xd0>
+
+	spi_writeInt(motor, TMC4671_PID_VELOCITY_TARGET, 30); // test
+ 406:	8d 2d       	mov	r24, r13
+ 408:	66 e6       	ldi	r22, 0x66	; 102
+ 40a:	2e e1       	ldi	r18, 0x1E	; 30
+ 40c:	30 e0       	ldi	r19, 0x00	; 0
+ 40e:	40 e0       	ldi	r20, 0x00	; 0
+ 410:	50 e0       	ldi	r21, 0x00	; 0
+ 412:	2e de       	rcall	.-932    	; 0x70 <spi_writeInt>
+
+	// search N-channel
+	do
+	{
+		reply = spi_readInt(motor, TMC4671_ABN_DECODER_COUNT_N);
+ 414:	8d 2d       	mov	r24, r13
+ 416:	68 e2       	ldi	r22, 0x28	; 40
+ 418:	7b de       	rcall	.-778    	; 0x110 <spi_readInt>
+ 41a:	7b 01       	movw	r14, r22
+ 41c:	8c 01       	movw	r16, r24
+		spi_writeInt(motor, TMC4671_PID_POSITION_ACTUAL, 0);
+ 41e:	8d 2d       	mov	r24, r13
+ 420:	6b e6       	ldi	r22, 0x6B	; 107
+ 422:	20 e0       	ldi	r18, 0x00	; 0
+ 424:	30 e0       	ldi	r19, 0x00	; 0
+ 426:	40 e0       	ldi	r20, 0x00	; 0
+ 428:	50 e0       	ldi	r21, 0x00	; 0
+ 42a:	22 de       	rcall	.-956    	; 0x70 <spi_writeInt>
+	} while (reply == 0);
+ 42c:	e1 14       	cp	r14, r1
+ 42e:	f1 04       	cpc	r15, r1
+ 430:	01 05       	cpc	r16, r1
+ 432:	11 05       	cpc	r17, r1
+ 434:	79 f3       	breq	.-34     	; 0x414 <encoderInit+0xfc>
+
+	spi_writeInt(motor, TMC4671_PID_VELOCITY_TARGET, 40); // test
+ 436:	8d 2d       	mov	r24, r13
+ 438:	66 e6       	ldi	r22, 0x66	; 102
+ 43a:	28 e2       	ldi	r18, 0x28	; 40
+ 43c:	30 e0       	ldi	r19, 0x00	; 0
+ 43e:	40 e0       	ldi	r20, 0x00	; 0
+ 440:	50 e0       	ldi	r21, 0x00	; 0
+ 442:	16 de       	rcall	.-980    	; 0x70 <spi_writeInt>
+
+	// drive to zero position using position mode
+	spi_writeInt(motor, TMC4671_PID_POSITION_TARGET, (motor==0) ? Motor_BOTTOM_Position_Offset : Motor_TOP_Position_Offset);
+ 444:	dd 20       	and	r13, r13
+ 446:	29 f0       	breq	.+10     	; 0x452 <encoderInit+0x13a>
+ 448:	20 ee       	ldi	r18, 0xE0	; 224
+ 44a:	34 ec       	ldi	r19, 0xC4	; 196
+ 44c:	40 e0       	ldi	r20, 0x00	; 0
+ 44e:	50 e0       	ldi	r21, 0x00	; 0
+ 450:	04 c0       	rjmp	.+8      	; 0x45a <encoderInit+0x142>
+ 452:	2e e1       	ldi	r18, 0x1E	; 30
+ 454:	3f ea       	ldi	r19, 0xAF	; 175
+ 456:	40 e0       	ldi	r20, 0x00	; 0
+ 458:	50 e0       	ldi	r21, 0x00	; 0
+ 45a:	8d 2d       	mov	r24, r13
+ 45c:	68 e6       	ldi	r22, 0x68	; 104
+ 45e:	08 de       	rcall	.-1008   	; 0x70 <spi_writeInt>
+	spi_writeInt(motor, TMC4671_MODE_RAMP_MODE_MOTION, 3);
+ 460:	8d 2d       	mov	r24, r13
+ 462:	63 e6       	ldi	r22, 0x63	; 99
+ 464:	23 e0       	ldi	r18, 0x03	; 3
+ 466:	30 e0       	ldi	r19, 0x00	; 0
+ 468:	40 e0       	ldi	r20, 0x00	; 0
+ 46a:	50 e0       	ldi	r21, 0x00	; 0
+ 46c:	01 de       	rcall	.-1022   	; 0x70 <spi_writeInt>
+}
+ 46e:	1f 91       	pop	r17
+ 470:	0f 91       	pop	r16
+ 472:	ff 90       	pop	r15
+ 474:	ef 90       	pop	r14
+ 476:	df 90       	pop	r13
+ 478:	08 95       	ret
+
+0000047a <positionReached>:
+
+uint8_t positionReached(int32_t targetPosition, int32_t actualPosition, int32_t actualVelocity, int32_t maxPosDiff, int32_t maxVel)
+{
+ 47a:	af 92       	push	r10
+ 47c:	bf 92       	push	r11
+ 47e:	cf 92       	push	r12
+ 480:	df 92       	push	r13
+ 482:	ef 92       	push	r14
+ 484:	ff 92       	push	r15
+ 486:	0f 93       	push	r16
+ 488:	1f 93       	push	r17
+ 48a:	df 93       	push	r29
+ 48c:	cf 93       	push	r28
+ 48e:	cd b7       	in	r28, 0x3d	; 61
+ 490:	de b7       	in	r29, 0x3e	; 62
+	if ((labs((long)targetPosition-(long)actualPosition) <= maxPosDiff) & (labs((long)actualVelocity) <= maxVel))
+ 492:	e0 e0       	ldi	r30, 0x00	; 0
+ 494:	62 1b       	sub	r22, r18
+ 496:	73 0b       	sbc	r23, r19
+ 498:	84 0b       	sbc	r24, r20
+ 49a:	95 0b       	sbc	r25, r21
+ 49c:	97 ff       	sbrs	r25, 7
+ 49e:	07 c0       	rjmp	.+14     	; 0x4ae <positionReached+0x34>
+ 4a0:	90 95       	com	r25
+ 4a2:	80 95       	com	r24
+ 4a4:	70 95       	com	r23
+ 4a6:	61 95       	neg	r22
+ 4a8:	7f 4f       	sbci	r23, 0xFF	; 255
+ 4aa:	8f 4f       	sbci	r24, 0xFF	; 255
+ 4ac:	9f 4f       	sbci	r25, 0xFF	; 255
+ 4ae:	a6 16       	cp	r10, r22
+ 4b0:	b7 06       	cpc	r11, r23
+ 4b2:	c8 06       	cpc	r12, r24
+ 4b4:	d9 06       	cpc	r13, r25
+ 4b6:	0c f0       	brlt	.+2      	; 0x4ba <positionReached+0x40>
+ 4b8:	e1 e0       	ldi	r30, 0x01	; 1
+ 4ba:	60 e0       	ldi	r22, 0x00	; 0
+ 4bc:	c7 01       	movw	r24, r14
+ 4be:	d8 01       	movw	r26, r16
+ 4c0:	9c 01       	movw	r18, r24
+ 4c2:	ad 01       	movw	r20, r26
+ 4c4:	57 ff       	sbrs	r21, 7
+ 4c6:	07 c0       	rjmp	.+14     	; 0x4d6 <positionReached+0x5c>
+ 4c8:	50 95       	com	r21
+ 4ca:	40 95       	com	r20
+ 4cc:	30 95       	com	r19
+ 4ce:	21 95       	neg	r18
+ 4d0:	3f 4f       	sbci	r19, 0xFF	; 255
+ 4d2:	4f 4f       	sbci	r20, 0xFF	; 255
+ 4d4:	5f 4f       	sbci	r21, 0xFF	; 255
+ 4d6:	8d 85       	ldd	r24, Y+13	; 0x0d
+ 4d8:	9e 85       	ldd	r25, Y+14	; 0x0e
+ 4da:	af 85       	ldd	r26, Y+15	; 0x0f
+ 4dc:	b8 89       	ldd	r27, Y+16	; 0x10
+ 4de:	82 17       	cp	r24, r18
+ 4e0:	93 07       	cpc	r25, r19
+ 4e2:	a4 07       	cpc	r26, r20
+ 4e4:	b5 07       	cpc	r27, r21
+ 4e6:	0c f0       	brlt	.+2      	; 0x4ea <positionReached+0x70>
+ 4e8:	61 e0       	ldi	r22, 0x01	; 1
+	{
+		return 1;
+	}
+	return 0;
+}
+ 4ea:	8e 2f       	mov	r24, r30
+ 4ec:	86 23       	and	r24, r22
+ 4ee:	cf 91       	pop	r28
+ 4f0:	df 91       	pop	r29
+ 4f2:	1f 91       	pop	r17
+ 4f4:	0f 91       	pop	r16
+ 4f6:	ff 90       	pop	r15
+ 4f8:	ef 90       	pop	r14
+ 4fa:	df 90       	pop	r13
+ 4fc:	cf 90       	pop	r12
+ 4fe:	bf 90       	pop	r11
+ 500:	af 90       	pop	r10
+ 502:	08 95       	ret
+
+00000504 <wait>:
+
+	return value;
+}
+
+void wait(uint16_t time)
+{
+ 504:	af 92       	push	r10
+ 506:	bf 92       	push	r11
+ 508:	cf 92       	push	r12
+ 50a:	df 92       	push	r13
+ 50c:	ef 92       	push	r14
+ 50e:	ff 92       	push	r15
+ 510:	0f 93       	push	r16
+ 512:	1f 93       	push	r17
+ 514:	8c 01       	movw	r16, r24
+	uint32_t startTime = systick_getTimer();
+ 516:	50 d1       	rcall	.+672    	; 0x7b8 <systick_getTimer>
+ 518:	5c 01       	movw	r10, r24
+ 51a:	cc 24       	eor	r12, r12
+ 51c:	dd 24       	eor	r13, r13
+	while ((systick_getTimer()-startTime) < time){;}
+ 51e:	78 01       	movw	r14, r16
+ 520:	00 e0       	ldi	r16, 0x00	; 0
+ 522:	10 e0       	ldi	r17, 0x00	; 0
+ 524:	49 d1       	rcall	.+658    	; 0x7b8 <systick_getTimer>
+ 526:	a0 e0       	ldi	r26, 0x00	; 0
+ 528:	b0 e0       	ldi	r27, 0x00	; 0
+ 52a:	8a 19       	sub	r24, r10
+ 52c:	9b 09       	sbc	r25, r11
+ 52e:	ac 09       	sbc	r26, r12
+ 530:	bd 09       	sbc	r27, r13
+ 532:	8e 15       	cp	r24, r14
+ 534:	9f 05       	cpc	r25, r15
+ 536:	a0 07       	cpc	r26, r16
+ 538:	b1 07       	cpc	r27, r17
+ 53a:	a0 f3       	brcs	.-24     	; 0x524 <wait+0x20>
+}
+ 53c:	1f 91       	pop	r17
+ 53e:	0f 91       	pop	r16
+ 540:	ff 90       	pop	r15
+ 542:	ef 90       	pop	r14
+ 544:	df 90       	pop	r13
+ 546:	cf 90       	pop	r12
+ 548:	bf 90       	pop	r11
+ 54a:	af 90       	pop	r10
+ 54c:	08 95       	ret
+
+0000054e <main>:
+	}
+	return 0;
+}
+
+int main (void)
+{
+ 54e:	4f 92       	push	r4
+ 550:	5f 92       	push	r5
+ 552:	6f 92       	push	r6
+ 554:	7f 92       	push	r7
+ 556:	8f 92       	push	r8
+ 558:	9f 92       	push	r9
+ 55a:	af 92       	push	r10
+ 55c:	bf 92       	push	r11
+ 55e:	cf 92       	push	r12
+ 560:	df 92       	push	r13
+ 562:	ef 92       	push	r14
+ 564:	ff 92       	push	r15
+ 566:	0f 93       	push	r16
+ 568:	1f 93       	push	r17
+ 56a:	cf 93       	push	r28
+ 56c:	df 93       	push	r29
+	// PB1 - MISO (input)
+	// PB2 - SCK (output)
+	// PB3 - /CS_TMC4671_MOTOR_0 (output)
+	// PB4 - /CS_TMC4671_MOTOR_1 (output)
+	// PB5 - Alive LED
+	DDRB = (1<<DDB0) | (1<<DDB2) | (1<<DDB3) | (1<<DDB4);
+ 56e:	8d e1       	ldi	r24, 0x1D	; 29
+ 570:	87 bb       	out	0x17, r24	; 23
+
+	// init chip select
+	CS_MOTOR_BOTTOM_HIGH();
+ 572:	c3 9a       	sbi	0x18, 3	; 24
+	CS_MOTOR_TOP_HIGH();
+ 574:	c4 9a       	sbi	0x18, 4	; 24
+
+	// configure timer0
+	systick_init();
+ 576:	10 d1       	rcall	.+544    	; 0x798 <systick_init>
+
+	//enable interrupts
+	sei();
+ 578:	78 94       	sei
+
+	wait(1000);
+ 57a:	88 ee       	ldi	r24, 0xE8	; 232
+ 57c:	93 e0       	ldi	r25, 0x03	; 3
+ 57e:	c2 df       	rcall	.-124    	; 0x504 <wait>
+
+	// initialize motor at bottom
+	spi_readInt(MOTOR_BOTTOM, TMC4671_CHIPINFO_DATA);
+ 580:	80 e0       	ldi	r24, 0x00	; 0
+ 582:	60 e0       	ldi	r22, 0x00	; 0
+ 584:	c5 dd       	rcall	.-1142   	; 0x110 <spi_readInt>
+	configureMotor(MOTOR_BOTTOM);
+ 586:	80 e0       	ldi	r24, 0x00	; 0
+ 588:	15 de       	rcall	.-982    	; 0x1b4 <configureMotor>
+	encoderInit(MOTOR_BOTTOM);
+ 58a:	80 e0       	ldi	r24, 0x00	; 0
+ 58c:	c5 de       	rcall	.-630    	; 0x318 <encoderInit>
+
+	wait(4000);
+ 58e:	80 ea       	ldi	r24, 0xA0	; 160
+ 590:	9f e0       	ldi	r25, 0x0F	; 15
+ 592:	b8 df       	rcall	.-144    	; 0x504 <wait>
+
+	// initialize motor at top
+	spi_readInt(MOTOR_TOP, TMC4671_CHIPINFO_DATA);
+ 594:	81 e0       	ldi	r24, 0x01	; 1
+ 596:	60 e0       	ldi	r22, 0x00	; 0
+ 598:	bb dd       	rcall	.-1162   	; 0x110 <spi_readInt>
+	configureMotor(MOTOR_TOP);
+ 59a:	81 e0       	ldi	r24, 0x01	; 1
+ 59c:	0b de       	rcall	.-1002   	; 0x1b4 <configureMotor>
+	encoderInit(MOTOR_TOP);
+ 59e:	81 e0       	ldi	r24, 0x01	; 1
+ 5a0:	bb de       	rcall	.-650    	; 0x318 <encoderInit>
+
+	wait(1000);
+ 5a2:	88 ee       	ldi	r24, 0xE8	; 232
+ 5a4:	93 e0       	ldi	r25, 0x03	; 3
+ 5a6:	ae df       	rcall	.-164    	; 0x504 <wait>
+ 5a8:	44 24       	eor	r4, r4
+ 5aa:	55 24       	eor	r5, r5
+ 5ac:	c0 e0       	ldi	r28, 0x00	; 0
+ 5ae:	d0 e0       	ldi	r29, 0x00	; 0
+ 5b0:	4e e1       	ldi	r20, 0x1E	; 30
+ 5b2:	64 2e       	mov	r6, r20
+ 5b4:	4f ea       	ldi	r20, 0xAF	; 175
+ 5b6:	74 2e       	mov	r7, r20
+ 5b8:	81 2c       	mov	r8, r1
+ 5ba:	91 2c       	mov	r9, r1
+ 5bc:	30 ee       	ldi	r19, 0xE0	; 224
+ 5be:	a3 2e       	mov	r10, r19
+ 5c0:	34 ec       	ldi	r19, 0xC4	; 196
+ 5c2:	b3 2e       	mov	r11, r19
+ 5c4:	c1 2c       	mov	r12, r1
+ 5c6:	d1 2c       	mov	r13, r1
+	int32_t maxDiff = 100;
+	int32_t maxVel = 20;
+	while(1)
+	{
+#ifndef N_POSITION_TEST
+		if (state == 0)
+ 5c8:	20 97       	sbiw	r28, 0x00	; 0
+ 5ca:	09 f0       	breq	.+2      	; 0x5ce <main+0x80>
+ 5cc:	43 c0       	rjmp	.+134    	; 0x654 <main+0x106>
+		{
+			if (positionReached(lastTargetPositionBottom, spi_readInt(MOTOR_BOTTOM, TMC4671_PID_POSITION_ACTUAL),spi_readInt(MOTOR_BOTTOM, TMC4671_PID_VELOCITY_ACTUAL), maxDiff, maxVel))
+ 5ce:	80 e0       	ldi	r24, 0x00	; 0
+ 5d0:	6b e6       	ldi	r22, 0x6B	; 107
+ 5d2:	9e dd       	rcall	.-1220   	; 0x110 <spi_readInt>
+ 5d4:	7b 01       	movw	r14, r22
+ 5d6:	8c 01       	movw	r16, r24
+ 5d8:	80 e0       	ldi	r24, 0x00	; 0
+ 5da:	6a e6       	ldi	r22, 0x6A	; 106
+ 5dc:	99 dd       	rcall	.-1230   	; 0x110 <spi_readInt>
+	spi_writeInt(motor, TMC4671_MODE_RAMP_MODE_MOTION, 3);
+}
+
+uint8_t positionReached(int32_t targetPosition, int32_t actualPosition, int32_t actualVelocity, int32_t maxPosDiff, int32_t maxVel)
+{
+	if ((labs((long)targetPosition-(long)actualPosition) <= maxPosDiff) & (labs((long)actualVelocity) <= maxVel))
+ 5de:	a4 01       	movw	r20, r8
+ 5e0:	93 01       	movw	r18, r6
+ 5e2:	2e 19       	sub	r18, r14
+ 5e4:	3f 09       	sbc	r19, r15
+ 5e6:	40 0b       	sbc	r20, r16
+ 5e8:	51 0b       	sbc	r21, r17
+ 5ea:	57 ff       	sbrs	r21, 7
+ 5ec:	07 c0       	rjmp	.+14     	; 0x5fc <main+0xae>
+ 5ee:	50 95       	com	r21
+ 5f0:	40 95       	com	r20
+ 5f2:	30 95       	com	r19
+ 5f4:	21 95       	neg	r18
+ 5f6:	3f 4f       	sbci	r19, 0xFF	; 255
+ 5f8:	4f 4f       	sbci	r20, 0xFF	; 255
+ 5fa:	5f 4f       	sbci	r21, 0xFF	; 255
+ 5fc:	25 36       	cpi	r18, 0x65	; 101
+ 5fe:	31 05       	cpc	r19, r1
+ 600:	41 05       	cpc	r20, r1
+ 602:	51 05       	cpc	r21, r1
+ 604:	24 f7       	brge	.-56     	; 0x5ce <main+0x80>
+ 606:	ac 01       	movw	r20, r24
+ 608:	cb 01       	movw	r24, r22
+ 60a:	da 01       	movw	r26, r20
+ 60c:	b7 ff       	sbrs	r27, 7
+ 60e:	07 c0       	rjmp	.+14     	; 0x61e <main+0xd0>
+ 610:	b0 95       	com	r27
+ 612:	a0 95       	com	r26
+ 614:	90 95       	com	r25
+ 616:	81 95       	neg	r24
+ 618:	9f 4f       	sbci	r25, 0xFF	; 255
+ 61a:	af 4f       	sbci	r26, 0xFF	; 255
+ 61c:	bf 4f       	sbci	r27, 0xFF	; 255
+ 61e:	45 97       	sbiw	r24, 0x15	; 21
+ 620:	a1 05       	cpc	r26, r1
+ 622:	b1 05       	cpc	r27, r1
+ 624:	a4 f6       	brge	.-88     	; 0x5ce <main+0x80>
+				// turn motor_0
+				lastTargetPositionBottom = Motor_0_Position_Offset;
+				spi_writeInt(MOTOR_0, TMC4671_PID_POSITION_TARGET, lastTargetPositionBottom);
+#else
+				// turn motor_1
+				lastTargetPositionTOP = (positionCounter*65536) + Motor_TOP_Position_Offset;
+ 626:	c2 01       	movw	r24, r4
+ 628:	aa 27       	eor	r26, r26
+ 62a:	97 fd       	sbrc	r25, 7
+ 62c:	a0 95       	com	r26
+ 62e:	ba 2f       	mov	r27, r26
+ 630:	6c 01       	movw	r12, r24
+ 632:	bb 24       	eor	r11, r11
+ 634:	aa 24       	eor	r10, r10
+ 636:	80 ee       	ldi	r24, 0xE0	; 224
+ 638:	94 ec       	ldi	r25, 0xC4	; 196
+ 63a:	a0 e0       	ldi	r26, 0x00	; 0
+ 63c:	b0 e0       	ldi	r27, 0x00	; 0
+ 63e:	a8 0e       	add	r10, r24
+ 640:	b9 1e       	adc	r11, r25
+ 642:	ca 1e       	adc	r12, r26
+ 644:	db 1e       	adc	r13, r27
+				spi_writeInt(MOTOR_TOP, TMC4671_PID_POSITION_TARGET, lastTargetPositionTOP);
+ 646:	81 e0       	ldi	r24, 0x01	; 1
+ 648:	68 e6       	ldi	r22, 0x68	; 104
+ 64a:	a6 01       	movw	r20, r12
+ 64c:	95 01       	movw	r18, r10
+ 64e:	10 dd       	rcall	.-1504   	; 0x70 <spi_writeInt>
+ 650:	c1 e0       	ldi	r28, 0x01	; 1
+ 652:	d0 e0       	ldi	r29, 0x00	; 0
+		else
+		{
+#ifdef DEMO1
+			if (positionReached(lastTargetPositionBottom, spi_readInt(MOTOR_BOTTOM, TMC4671_PID_POSITION_ACTUAL),spi_readInt(MOTOR_BOTTOM, TMC4671_PID_VELOCITY_ACTUAL), maxDiff, maxVel))
+#else
+			if (positionReached(lastTargetPositionTOP, spi_readInt(MOTOR_TOP, TMC4671_PID_POSITION_ACTUAL),spi_readInt(MOTOR_TOP, TMC4671_PID_VELOCITY_ACTUAL), maxDiff, maxVel))
+ 654:	81 e0       	ldi	r24, 0x01	; 1
+ 656:	6b e6       	ldi	r22, 0x6B	; 107
+ 658:	5b dd       	rcall	.-1354   	; 0x110 <spi_readInt>
+ 65a:	7b 01       	movw	r14, r22
+ 65c:	8c 01       	movw	r16, r24
+ 65e:	81 e0       	ldi	r24, 0x01	; 1
+ 660:	6a e6       	ldi	r22, 0x6A	; 106
+ 662:	56 dd       	rcall	.-1364   	; 0x110 <spi_readInt>
+	spi_writeInt(motor, TMC4671_MODE_RAMP_MODE_MOTION, 3);
+}
+
+uint8_t positionReached(int32_t targetPosition, int32_t actualPosition, int32_t actualVelocity, int32_t maxPosDiff, int32_t maxVel)
+{
+	if ((labs((long)targetPosition-(long)actualPosition) <= maxPosDiff) & (labs((long)actualVelocity) <= maxVel))
+ 664:	a6 01       	movw	r20, r12
+ 666:	95 01       	movw	r18, r10
+ 668:	2e 19       	sub	r18, r14
+ 66a:	3f 09       	sbc	r19, r15
+ 66c:	40 0b       	sbc	r20, r16
+ 66e:	51 0b       	sbc	r21, r17
+ 670:	57 ff       	sbrs	r21, 7
+ 672:	07 c0       	rjmp	.+14     	; 0x682 <main+0x134>
+ 674:	50 95       	com	r21
+ 676:	40 95       	com	r20
+ 678:	30 95       	com	r19
+ 67a:	21 95       	neg	r18
+ 67c:	3f 4f       	sbci	r19, 0xFF	; 255
+ 67e:	4f 4f       	sbci	r20, 0xFF	; 255
+ 680:	5f 4f       	sbci	r21, 0xFF	; 255
+ 682:	25 36       	cpi	r18, 0x65	; 101
+ 684:	31 05       	cpc	r19, r1
+ 686:	41 05       	cpc	r20, r1
+ 688:	51 05       	cpc	r21, r1
+ 68a:	0c f0       	brlt	.+2      	; 0x68e <main+0x140>
+ 68c:	9d cf       	rjmp	.-198    	; 0x5c8 <main+0x7a>
+ 68e:	ac 01       	movw	r20, r24
+ 690:	cb 01       	movw	r24, r22
+ 692:	da 01       	movw	r26, r20
+ 694:	b7 ff       	sbrs	r27, 7
+ 696:	07 c0       	rjmp	.+14     	; 0x6a6 <main+0x158>
+ 698:	b0 95       	com	r27
+ 69a:	a0 95       	com	r26
+ 69c:	90 95       	com	r25
+ 69e:	81 95       	neg	r24
+ 6a0:	9f 4f       	sbci	r25, 0xFF	; 255
+ 6a2:	af 4f       	sbci	r26, 0xFF	; 255
+ 6a4:	bf 4f       	sbci	r27, 0xFF	; 255
+ 6a6:	45 97       	sbiw	r24, 0x15	; 21
+ 6a8:	a1 05       	cpc	r26, r1
+ 6aa:	b1 05       	cpc	r27, r1
+ 6ac:	0c f0       	brlt	.+2      	; 0x6b0 <main+0x162>
+ 6ae:	8c cf       	rjmp	.-232    	; 0x5c8 <main+0x7a>
+				//spi_writeInt(MOTOR_1, TMC4671_PID_VELOCITY_LIMIT, spi_readInt(MOTOR_0, TMC4671_PID_VELOCITY_LIMIT));
+
+				// ===== adjust max velocity of motor 0 and 1 by reading ADC_AGPI =====
+
+				// select ADC_AGPI_A for ADC_RAW_DATA
+				spi_writeInt(MOTOR_BOTTOM, TMC4671_ADC_RAW_ADDR, 1);
+ 6b0:	80 e0       	ldi	r24, 0x00	; 0
+ 6b2:	63 e0       	ldi	r22, 0x03	; 3
+ 6b4:	21 e0       	ldi	r18, 0x01	; 1
+ 6b6:	30 e0       	ldi	r19, 0x00	; 0
+ 6b8:	40 e0       	ldi	r20, 0x00	; 0
+ 6ba:	50 e0       	ldi	r21, 0x00	; 0
+ 6bc:	d9 dc       	rcall	.-1614   	; 0x70 <spi_writeInt>
+				int32_t maxADC = spi_readInt(MOTOR_BOTTOM, TMC4671_ADC_RAW_DATA);
+ 6be:	80 e0       	ldi	r24, 0x00	; 0
+ 6c0:	62 e0       	ldi	r22, 0x02	; 2
+ 6c2:	26 dd       	rcall	.-1460   	; 0x110 <spi_readInt>
+ 6c4:	9b 01       	movw	r18, r22
+ 6c6:	ac 01       	movw	r20, r24
+				maxADC = maxADC >> 16;
+				maxADC = maxADC &0x0000FFFF;
+ 6c8:	ba 01       	movw	r22, r20
+ 6ca:	88 27       	eor	r24, r24
+ 6cc:	99 27       	eor	r25, r25
+
+				// adc range is between ~35.000 and ~48.000
+				// remove adc offset
+				maxADC = maxADC - 35000;
+ 6ce:	68 5b       	subi	r22, 0xB8	; 184
+ 6d0:	78 48       	sbci	r23, 0x88	; 136
+ 6d2:	80 40       	sbci	r24, 0x00	; 0
+ 6d4:	90 40       	sbci	r25, 0x00	; 0
+
+				// limit adc-offset between 0 and 13000
+				if (maxADC < 0)
+ 6d6:	97 ff       	sbrs	r25, 7
+ 6d8:	05 c0       	rjmp	.+10     	; 0x6e4 <main+0x196>
+ 6da:	60 e0       	ldi	r22, 0x00	; 0
+ 6dc:	70 e0       	ldi	r23, 0x00	; 0
+ 6de:	80 e0       	ldi	r24, 0x00	; 0
+ 6e0:	90 e0       	ldi	r25, 0x00	; 0
+ 6e2:	0c c0       	rjmp	.+24     	; 0x6fc <main+0x1ae>
+					maxADC = 0;
+
+				if (maxADC > 13000)
+ 6e4:	69 3c       	cpi	r22, 0xC9	; 201
+ 6e6:	a2 e3       	ldi	r26, 0x32	; 50
+ 6e8:	7a 07       	cpc	r23, r26
+ 6ea:	a0 e0       	ldi	r26, 0x00	; 0
+ 6ec:	8a 07       	cpc	r24, r26
+ 6ee:	a0 e0       	ldi	r26, 0x00	; 0
+ 6f0:	9a 07       	cpc	r25, r26
+ 6f2:	24 f0       	brlt	.+8      	; 0x6fc <main+0x1ae>
+ 6f4:	68 ec       	ldi	r22, 0xC8	; 200
+ 6f6:	72 e3       	ldi	r23, 0x32	; 50
+ 6f8:	80 e0       	ldi	r24, 0x00	; 0
+ 6fa:	90 e0       	ldi	r25, 0x00	; 0
+					maxADC = 13000;
+
+				// scale value to 60..1200rpm
+				maxADC = 60 + (maxADC * 47 / 650);
+ 6fc:	2f e2       	ldi	r18, 0x2F	; 47
+ 6fe:	30 e0       	ldi	r19, 0x00	; 0
+ 700:	40 e0       	ldi	r20, 0x00	; 0
+ 702:	50 e0       	ldi	r21, 0x00	; 0
+ 704:	5e d0       	rcall	.+188    	; 0x7c2 <__mulsi3>
+ 706:	2a e8       	ldi	r18, 0x8A	; 138
+ 708:	32 e0       	ldi	r19, 0x02	; 2
+ 70a:	40 e0       	ldi	r20, 0x00	; 0
+ 70c:	50 e0       	ldi	r21, 0x00	; 0
+ 70e:	72 d0       	rcall	.+228    	; 0x7f4 <__divmodsi4>
+ 710:	79 01       	movw	r14, r18
+ 712:	8a 01       	movw	r16, r20
+ 714:	8c e3       	ldi	r24, 0x3C	; 60
+ 716:	90 e0       	ldi	r25, 0x00	; 0
+ 718:	a0 e0       	ldi	r26, 0x00	; 0
+ 71a:	b0 e0       	ldi	r27, 0x00	; 0
+ 71c:	e8 0e       	add	r14, r24
+ 71e:	f9 1e       	adc	r15, r25
+ 720:	0a 1f       	adc	r16, r26
+ 722:	1b 1f       	adc	r17, r27
+
+				spi_writeInt(MOTOR_BOTTOM, TMC4671_PID_VELOCITY_LIMIT, maxADC);
+ 724:	80 e0       	ldi	r24, 0x00	; 0
+ 726:	60 e6       	ldi	r22, 0x60	; 96
+ 728:	a8 01       	movw	r20, r16
+ 72a:	97 01       	movw	r18, r14
+ 72c:	a1 dc       	rcall	.-1726   	; 0x70 <spi_writeInt>
+				spi_writeInt(MOTOR_TOP, TMC4671_PID_VELOCITY_LIMIT, maxADC);
+ 72e:	81 e0       	ldi	r24, 0x01	; 1
+ 730:	60 e6       	ldi	r22, 0x60	; 96
+ 732:	a8 01       	movw	r20, r16
+ 734:	97 01       	movw	r18, r14
+ 736:	9c dc       	rcall	.-1736   	; 0x70 <spi_writeInt>
+				// turn motor_0
+				lastTargetPositionBottom = 65536 + Motor_0_Position_Offset;
+				spi_writeInt(MOTOR_0, TMC4671_PID_POSITION_TARGET, lastTargetPositionBottom);
+#else
+				// turn motor_0
+				lastTargetPositionBottom = (positionCounter*65536) + Motor_BOTTOM_Position_Offset;
+ 738:	c2 01       	movw	r24, r4
+ 73a:	aa 27       	eor	r26, r26
+ 73c:	97 fd       	sbrc	r25, 7
+ 73e:	a0 95       	com	r26
+ 740:	ba 2f       	mov	r27, r26
+ 742:	4c 01       	movw	r8, r24
+ 744:	77 24       	eor	r7, r7
+ 746:	66 24       	eor	r6, r6
+ 748:	8e e1       	ldi	r24, 0x1E	; 30
+ 74a:	9f ea       	ldi	r25, 0xAF	; 175
+ 74c:	a0 e0       	ldi	r26, 0x00	; 0
+ 74e:	b0 e0       	ldi	r27, 0x00	; 0
+ 750:	68 0e       	add	r6, r24
+ 752:	79 1e       	adc	r7, r25
+ 754:	8a 1e       	adc	r8, r26
+ 756:	9b 1e       	adc	r9, r27
+				spi_writeInt(MOTOR_BOTTOM, TMC4671_PID_POSITION_TARGET, lastTargetPositionBottom);
+ 758:	80 e0       	ldi	r24, 0x00	; 0
+ 75a:	68 e6       	ldi	r22, 0x68	; 104
+ 75c:	a4 01       	movw	r20, r8
+ 75e:	93 01       	movw	r18, r6
+ 760:	87 dc       	rcall	.-1778   	; 0x70 <spi_writeInt>
+
+				positionCounter++;
+ 762:	08 94       	sec
+ 764:	41 1c       	adc	r4, r1
+ 766:	51 1c       	adc	r5, r1
+ 768:	32 cf       	rjmp	.-412    	; 0x5ce <main+0x80>
+
+0000076a <__vector_3>:
+
+unsigned int msCounter = 0;
+
+/* timer_0 interrupt handler */
+ISR(TIM1_COMPA_vect)
+{
+ 76a:	1f 92       	push	r1
+ 76c:	0f 92       	push	r0
+ 76e:	0f b6       	in	r0, 0x3f	; 63
+ 770:	0f 92       	push	r0
+ 772:	11 24       	eor	r1, r1
+ 774:	8f 93       	push	r24
+ 776:	9f 93       	push	r25
+	msCounter++;
+ 778:	80 91 60 00 	lds	r24, 0x0060
+ 77c:	90 91 61 00 	lds	r25, 0x0061
+ 780:	01 96       	adiw	r24, 0x01	; 1
+ 782:	90 93 61 00 	sts	0x0061, r25
+ 786:	80 93 60 00 	sts	0x0060, r24
+}
+ 78a:	9f 91       	pop	r25
+ 78c:	8f 91       	pop	r24
+ 78e:	0f 90       	pop	r0
+ 790:	0f be       	out	0x3f, r0	; 63
+ 792:	0f 90       	pop	r0
+ 794:	1f 90       	pop	r1
+ 796:	18 95       	reti
+
+00000798 <systick_init>:
+
+/* init timer_0 */
+void systick_init(void)
+{
+	// configure Timer_0
+	TCCR1 |= (1<<CS01); 	// prescaler 8
+ 798:	80 b7       	in	r24, 0x30	; 48
+ 79a:	82 60       	ori	r24, 0x02	; 2
+ 79c:	80 bf       	out	0x30, r24	; 48
+	TCCR1 |= (1<<WGM01);	// use CTC Modus
+ 79e:	80 b7       	in	r24, 0x30	; 48
+ 7a0:	82 60       	ori	r24, 0x02	; 2
+ 7a2:	80 bf       	out	0x30, r24	; 48
+	OCR1A = 150-1;   		// (0,25ms interrupt)
+ 7a4:	85 e9       	ldi	r24, 0x95	; 149
+ 7a6:	8e bd       	out	0x2e, r24	; 46
+
+	// enable compare interrupt
+	TIMSK |= (1<<OCIE1A);
+ 7a8:	89 b7       	in	r24, 0x39	; 57
+ 7aa:	80 64       	ori	r24, 0x40	; 64
+ 7ac:	89 bf       	out	0x39, r24	; 57
+	msCounter = 0;
+ 7ae:	10 92 61 00 	sts	0x0061, r1
+ 7b2:	10 92 60 00 	sts	0x0060, r1
+}
+ 7b6:	08 95       	ret
+
+000007b8 <systick_getTimer>:
+
+unsigned int systick_getTimer(void)
+{
+	return msCounter;
+}
+ 7b8:	80 91 60 00 	lds	r24, 0x0060
+ 7bc:	90 91 61 00 	lds	r25, 0x0061
+ 7c0:	08 95       	ret
+
+000007c2 <__mulsi3>:
+ 7c2:	ff 27       	eor	r31, r31
+ 7c4:	ee 27       	eor	r30, r30
+ 7c6:	bb 27       	eor	r27, r27
+ 7c8:	aa 27       	eor	r26, r26
+
+000007ca <__mulsi3_loop>:
+ 7ca:	60 ff       	sbrs	r22, 0
+ 7cc:	04 c0       	rjmp	.+8      	; 0x7d6 <__mulsi3_skip1>
+ 7ce:	a2 0f       	add	r26, r18
+ 7d0:	b3 1f       	adc	r27, r19
+ 7d2:	e4 1f       	adc	r30, r20
+ 7d4:	f5 1f       	adc	r31, r21
+
+000007d6 <__mulsi3_skip1>:
+ 7d6:	22 0f       	add	r18, r18
+ 7d8:	33 1f       	adc	r19, r19
+ 7da:	44 1f       	adc	r20, r20
+ 7dc:	55 1f       	adc	r21, r21
+ 7de:	96 95       	lsr	r25
+ 7e0:	87 95       	ror	r24
+ 7e2:	77 95       	ror	r23
+ 7e4:	67 95       	ror	r22
+ 7e6:	89 f7       	brne	.-30     	; 0x7ca <__mulsi3_loop>
+ 7e8:	00 97       	sbiw	r24, 0x00	; 0
+ 7ea:	76 07       	cpc	r23, r22
+ 7ec:	71 f7       	brne	.-36     	; 0x7ca <__mulsi3_loop>
+
+000007ee <__mulsi3_exit>:
+ 7ee:	cf 01       	movw	r24, r30
+ 7f0:	bd 01       	movw	r22, r26
+ 7f2:	08 95       	ret
+
+000007f4 <__divmodsi4>:
+ 7f4:	97 fb       	bst	r25, 7
+ 7f6:	09 2e       	mov	r0, r25
+ 7f8:	05 26       	eor	r0, r21
+ 7fa:	0e d0       	rcall	.+28     	; 0x818 <__divmodsi4_neg1>
+ 7fc:	57 fd       	sbrc	r21, 7
+ 7fe:	04 d0       	rcall	.+8      	; 0x808 <__divmodsi4_neg2>
+ 800:	14 d0       	rcall	.+40     	; 0x82a <__udivmodsi4>
+ 802:	0a d0       	rcall	.+20     	; 0x818 <__divmodsi4_neg1>
+ 804:	00 1c       	adc	r0, r0
+ 806:	38 f4       	brcc	.+14     	; 0x816 <__divmodsi4_exit>
+
+00000808 <__divmodsi4_neg2>:
+ 808:	50 95       	com	r21
+ 80a:	40 95       	com	r20
+ 80c:	30 95       	com	r19
+ 80e:	21 95       	neg	r18
+ 810:	3f 4f       	sbci	r19, 0xFF	; 255
+ 812:	4f 4f       	sbci	r20, 0xFF	; 255
+ 814:	5f 4f       	sbci	r21, 0xFF	; 255
+
+00000816 <__divmodsi4_exit>:
+ 816:	08 95       	ret
+
+00000818 <__divmodsi4_neg1>:
+ 818:	f6 f7       	brtc	.-4      	; 0x816 <__divmodsi4_exit>
+ 81a:	90 95       	com	r25
+ 81c:	80 95       	com	r24
+ 81e:	70 95       	com	r23
+ 820:	61 95       	neg	r22
+ 822:	7f 4f       	sbci	r23, 0xFF	; 255
+ 824:	8f 4f       	sbci	r24, 0xFF	; 255
+ 826:	9f 4f       	sbci	r25, 0xFF	; 255
+ 828:	08 95       	ret
+
+0000082a <__udivmodsi4>:
+ 82a:	a1 e2       	ldi	r26, 0x21	; 33
+ 82c:	1a 2e       	mov	r1, r26
+ 82e:	aa 1b       	sub	r26, r26
+ 830:	bb 1b       	sub	r27, r27
+ 832:	fd 01       	movw	r30, r26
+ 834:	0d c0       	rjmp	.+26     	; 0x850 <__udivmodsi4_ep>
+
+00000836 <__udivmodsi4_loop>:
+ 836:	aa 1f       	adc	r26, r26
+ 838:	bb 1f       	adc	r27, r27
+ 83a:	ee 1f       	adc	r30, r30
+ 83c:	ff 1f       	adc	r31, r31
+ 83e:	a2 17       	cp	r26, r18
+ 840:	b3 07       	cpc	r27, r19
+ 842:	e4 07       	cpc	r30, r20
+ 844:	f5 07       	cpc	r31, r21
+ 846:	20 f0       	brcs	.+8      	; 0x850 <__udivmodsi4_ep>
+ 848:	a2 1b       	sub	r26, r18
+ 84a:	b3 0b       	sbc	r27, r19
+ 84c:	e4 0b       	sbc	r30, r20
+ 84e:	f5 0b       	sbc	r31, r21
+
+00000850 <__udivmodsi4_ep>:
+ 850:	66 1f       	adc	r22, r22
+ 852:	77 1f       	adc	r23, r23
+ 854:	88 1f       	adc	r24, r24
+ 856:	99 1f       	adc	r25, r25
+ 858:	1a 94       	dec	r1
+ 85a:	69 f7       	brne	.-38     	; 0x836 <__udivmodsi4_loop>
+ 85c:	60 95       	com	r22
+ 85e:	70 95       	com	r23
+ 860:	80 95       	com	r24
+ 862:	90 95       	com	r25
+ 864:	9b 01       	movw	r18, r22
+ 866:	ac 01       	movw	r20, r24
+ 868:	bd 01       	movw	r22, r26
+ 86a:	cf 01       	movw	r24, r30
+ 86c:	08 95       	ret
+
+0000086e <_exit>:
+ 86e:	f8 94       	cli
+
+00000870 <__stop_program>:
+ 870:	ff cf       	rjmp	.-2      	; 0x870 <__stop_program>
